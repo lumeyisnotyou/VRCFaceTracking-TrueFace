@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -98,6 +99,7 @@ namespace VRCFT_Module_TrueFace
             _cancellationToken?.Cancel();
             Console.WriteLine("Initializing inside external module");
             Console.WriteLine("Opening port to external tracking system.");
+            
             _client = new UdpClient(4863);
             _EndPoint = new IPEndPoint(IPAddress.Any, 4863);
             _latestData = new TrueFaceTrackingDataStruct();
@@ -113,6 +115,7 @@ namespace VRCFT_Module_TrueFace
             {
                 while (!_cancellationToken.IsCancellationRequested)
                 {
+                   
                     Update();
                     Thread.Sleep(10);
                 }
@@ -124,14 +127,24 @@ namespace VRCFT_Module_TrueFace
         {
             Console.WriteLine("Updating inside external module.");
             // Receive the data from the external tracking system
-            var data = _client.Receive(ref _EndPoint);
-            // Parse the data into a VRCFT-Parseable format
-            ReadData(data);
-            // Update the tracking data
-            TrackingData.Update(_latestData);
-            // Print the data to the console, just to make sure it's working
-            Console.WriteLine("Received data from external tracking system.");
-            // Print the lip data from the external tracking system
+            try
+            {
+                byte[] data = _client.Receive(ref _EndPoint);
+                Console.WriteLine("Received data from external tracking system.");
+                // Parse the data into a VRCFT-Parseable format
+                ReadData(data);
+                // Update the tracking data
+                TrackingData.Update(_latestData);
+                // Print the data to the console, just to make sure it's working
+                Console.WriteLine("Received data from external tracking system.");
+                // Print the lip data from the external tracking system
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+            
+
             Console.WriteLine("Jaw Open: " + _latestData.lips.JawOpen);
             if (Status.EyeState == ModuleState.Active)
                 Console.WriteLine("Eye data is being utilized.");
@@ -149,30 +162,11 @@ namespace VRCFT_Module_TrueFace
         }
         private void ReadData(byte[] data)
         {
-            // Read the data from the external tracking system
+            // Read the data from the external tracking system, which is in JSON
             var trackingData = new TrueFaceTrackingDataStruct();
-            // Parse the data into a VRCFT-Parseable format
-            trackingData.lips.JawOpen = BitConverter.ToSingle(data, 0);
-            trackingData.lips.JawForward = BitConverter.ToSingle(data, 4);
-            trackingData.lips.MouthClose = BitConverter.ToSingle(data, 8);
-            trackingData.lips.MouthRight = BitConverter.ToSingle(data, 12);
-            trackingData.lips.MouthLeft = BitConverter.ToSingle(data, 16);
-            trackingData.lips.MouthShrugUpper = BitConverter.ToSingle(data, 20);
-            trackingData.lips.MouthShrugLower = BitConverter.ToSingle(data, 24);
-            trackingData.lips.MouthFunnel = BitConverter.ToSingle(data, 28);
-            trackingData.lips.MouthPucker = BitConverter.ToSingle(data, 32);
-            trackingData.lips.MouthSmileRight = BitConverter.ToSingle(data, 36);
-            trackingData.lips.MouthSmileLeft = BitConverter.ToSingle(data, 40);
-            trackingData.lips.MouthFrownRight = BitConverter.ToSingle(data, 44);
-            trackingData.lips.MouthFrownLeft = BitConverter.ToSingle(data, 48);
-            trackingData.lips.CheekPuff = BitConverter.ToSingle(data, 52);
-            trackingData.lips.MouthUpperUpRight = BitConverter.ToSingle(data, 56);
-            trackingData.lips.MouthUpperUpLeft = BitConverter.ToSingle(data, 60);
-            trackingData.lips.MouthLowerDownRight = BitConverter.ToSingle(data, 64);
-            trackingData.lips.MouthLowerDownLeft = BitConverter.ToSingle(data, 68);
-            trackingData.lips.MouthRollUpper = BitConverter.ToSingle(data, 72);
-            trackingData.lips.MouthRollLower = BitConverter.ToSingle(data, 76);
-            trackingData.lips.TongueOut = BitConverter.ToSingle(data, 80);
+            var json = System.Text.Encoding.UTF8.GetString(data);
+            // Parse the data into a VRCFT-Parseable format 
+            trackingData = JsonConvert.DeserializeObject<TrueFaceTrackingDataStruct>(json);
             // Print the data to the console, just to make sure it's working
             Console.WriteLine("Received data from external tracking system.");
             // Print the lip data from the external tracking system
