@@ -20,7 +20,7 @@ namespace VRCFT_Module_TrueFace
         // Map the JawOpen and MouthClose LiveLink blendshapes to the apeShape SRanipal blendshape
         private static float ApeCalc(float jawOpen, float mouthClose) => (0.05f + jawOpen) * (float)Math.Pow(0.05 + mouthClose, 2);
 
-        // Map the LiveLink module's lip tracking data to the SRanipal API
+        // Map the TrueFace module's lip tracking data to the SRanipal API
         private static void Update(ref LipTrackingData data, TrueFaceTrackingDataLips external)
         {
             //if (!UnifiedLibManager.LipEnabled) return;
@@ -79,7 +79,7 @@ namespace VRCFT_Module_TrueFace
     }
 
 
-    // Connect to the external tracking system here. The connection is a UDP socket on port 4863.
+    // Connect to the external tracking system here. The connection is a TCP socket on port 4863.
     public class TrueFaceTrackingModule : ExtTrackingModule
     {
         private IPAddress localAddr;
@@ -87,6 +87,7 @@ namespace VRCFT_Module_TrueFace
 
         private TcpClient client;
         private NetworkStream stream;
+        private TcpListener listener;
         private CancellationTokenSource cancellationToken;
         private bool connected = false;
 
@@ -105,12 +106,22 @@ namespace VRCFT_Module_TrueFace
             {
                 localAddr = IPAddress.Any;
                 cancellationToken = new CancellationTokenSource();
-                ConnectToTCP();
+                listener = new TcpListener(localAddr, Port);
+                listener.Start();
+                Logger.Msg("Started listener");
+                try
+                {
+                    ConnectToTCP();
+                } catch (Exception ex)
+                {
+                    Logger.Error(ex.ToString());
+                    return (false, false);
+                }
+                
             }
             catch (Exception ex)
             {
                 Logger.Error(ex.ToString());
-                throw;
                 return (false, false);
             }
 
@@ -123,9 +134,9 @@ namespace VRCFT_Module_TrueFace
         {
             try
             {
+                
                 client = new TcpClient();
-
-                client.Connect(IPAddress.Any, Port);
+                client.Connect(localAddr, Port);
 
                 if (client.Connected)
                 {
@@ -142,7 +153,6 @@ namespace VRCFT_Module_TrueFace
             catch (Exception e)
             {
                 Logger.Error(e.Message);
-                throw;
                 return false;
             }
         }
