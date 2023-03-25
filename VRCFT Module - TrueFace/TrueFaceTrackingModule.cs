@@ -11,64 +11,59 @@ using ViveSR.anipal.Lip;
 using VRCFaceTracking;
 using VRCFaceTracking.Params;
 
-// Credit to the livelink module, it's basically ARKit, so i'm reading the code as I write this 💀
-
+// Credit to the livelink module, it's basically ARKit, so I'm reading the code as I write this 💀
 namespace VRCFT_Module_TrueFace
 {
-
-
     // This class contains the overrides for any VRCFT Tracking Data struct functions
     public static class TrackingData
     {
-
-
         // Map the JawOpen and MouthClose LiveLink blendshapes to the apeShape SRanipal blendshape
-        private static float apeCalc(float jawOpen, float mouthClose) => (0.05f + jawOpen) * (float)Math.Pow(0.05 + mouthClose, 2);
+        private static float ApeCalc(float jawOpen, float mouthClose) => (0.05f + jawOpen) * (float)Math.Pow(0.05 + mouthClose, 2);
 
         // Map the LiveLink module's lip tracking data to the SRanipal API
         private static void Update(ref LipTrackingData data, TrueFaceTrackingDataLips external)
         {
             //if (!UnifiedLibManager.LipEnabled) return;
 
-            Dictionary<LipShape_v2, float> lipShapes = new Dictionary<LipShape_v2, float>{
-                    { LipShape_v2.JawRight, external.jawRight }, // +JawX
-                    { LipShape_v2.JawLeft, external.jawLeft }, // -JawX
-                    { LipShape_v2.JawForward, external.jawForward },
-                    { LipShape_v2.JawOpen, external.jawOpen },
-                    { LipShape_v2.MouthApeShape, apeCalc(external.jawOpen, external.mouthClose) },
-                    { LipShape_v2.MouthUpperRight, external.mouthRight }, // +MouthUpper
-                    { LipShape_v2.MouthUpperLeft, external.mouthLeft }, // -MouthUpper
-                    { LipShape_v2.MouthLowerRight, external.mouthRight }, // +MouthLower
-                    { LipShape_v2.MouthLowerLeft, external.mouthLeft }, // -MouthLower
-                    { LipShape_v2.MouthUpperOverturn, external.mouthShrugUpper },
-                    { LipShape_v2.MouthLowerOverturn, external.mouthShrugLower },
-                    { LipShape_v2.MouthPout, (external.mouthFunnel + external.mouthPucker) / 2 },
-                    { LipShape_v2.MouthSmileRight, external.mouthSmile_R }, // +SmileSadRight
-                    { LipShape_v2.MouthSmileLeft, external.mouthSmile_L }, // +SmileSadLeft
-                    { LipShape_v2.MouthSadRight, external.mouthFrown_R }, // -SmileSadRight
-                    { LipShape_v2.MouthSadLeft, external.mouthFrown_L }, // -SmileSadLeft
-                    { LipShape_v2.CheekPuffRight, external.cheekPuff },
-                    { LipShape_v2.CheekPuffLeft, external.cheekPuff },
-                    { LipShape_v2.CheekSuck, 0 },
-                    { LipShape_v2.MouthUpperUpRight, external.mouthUpperUp_R },
-                    { LipShape_v2.MouthUpperUpLeft, external.mouthUpperUp_R },
-                    { LipShape_v2.MouthLowerDownRight, external.mouthUpperUp_R },
-                    { LipShape_v2.MouthLowerDownLeft, external.mouthUpperUp_R },
-                    { LipShape_v2.MouthUpperInside, external.mouthUpperUp_R },
-                    { LipShape_v2.MouthLowerInside, external.mouthUpperUp_R },
-                    { LipShape_v2.MouthLowerOverlay, 0 },
-                    { LipShape_v2.TongueLongStep1, external.tongueOut },
-                    { LipShape_v2.TongueLeft, 0 }, // -TongueX
-                    { LipShape_v2.TongueRight, 0 }, // +TongueX
-                    { LipShape_v2.TongueUp, 0 }, // +TongueY
-                    { LipShape_v2.TongueDown, 0 }, // -TongueY
-                    { LipShape_v2.TongueRoll, 0 },
-                    { LipShape_v2.TongueLongStep2, external.tongueOut },
-                    { LipShape_v2.TongueUpRightMorph, 0 },
-                    { LipShape_v2.TongueUpLeftMorph, 0 },
-                    { LipShape_v2.TongueDownRightMorph, 0 },
-                    { LipShape_v2.TongueDownLeftMorph, 0 },
-                };
+            Dictionary<LipShape_v2, float> lipShapes = new Dictionary<LipShape_v2, float> {
+                { LipShape_v2.JawRight, external.jawRight }, // +JawX
+                { LipShape_v2.JawLeft, external.jawLeft }, // -JawX
+                { LipShape_v2.JawForward, external.jawForward },
+                { LipShape_v2.JawOpen, external.jawOpen },
+                { LipShape_v2.MouthApeShape, ApeCalc(external.jawOpen, external.mouthClose) },
+                { LipShape_v2.MouthUpperRight, external.mouthRight }, // +MouthUpper
+                { LipShape_v2.MouthUpperLeft, external.mouthLeft }, // -MouthUpper
+                { LipShape_v2.MouthLowerRight, external.mouthRight }, // +MouthLower
+                { LipShape_v2.MouthLowerLeft, external.mouthLeft }, // -MouthLower
+                { LipShape_v2.MouthUpperOverturn, external.mouthShrugUpper },
+                { LipShape_v2.MouthLowerOverturn, external.mouthShrugLower },
+                { LipShape_v2.MouthPout, (external.mouthFunnel + external.mouthPucker) / 2 },
+                { LipShape_v2.MouthSmileRight, external.mouthSmile_R }, // +SmileSadRight
+                { LipShape_v2.MouthSmileLeft, external.mouthSmile_L }, // +SmileSadLeft
+                { LipShape_v2.MouthSadRight, external.mouthFrown_R }, // -SmileSadRight
+                { LipShape_v2.MouthSadLeft, external.mouthFrown_L }, // -SmileSadLeft
+                { LipShape_v2.CheekPuffRight, external.cheekPuff },
+                { LipShape_v2.CheekPuffLeft, external.cheekPuff },
+                { LipShape_v2.CheekSuck, 0 },
+                { LipShape_v2.MouthUpperUpRight, external.mouthUpperUp_R },
+                { LipShape_v2.MouthUpperUpLeft, external.mouthUpperUp_R },
+                { LipShape_v2.MouthLowerDownRight, external.mouthUpperUp_R },
+                { LipShape_v2.MouthLowerDownLeft, external.mouthUpperUp_R },
+                { LipShape_v2.MouthUpperInside, external.mouthUpperUp_R },
+                { LipShape_v2.MouthLowerInside, external.mouthUpperUp_R },
+                { LipShape_v2.MouthLowerOverlay, 0 },
+                { LipShape_v2.TongueLongStep1, external.tongueOut },
+                { LipShape_v2.TongueLeft, 0 }, // -TongueX
+                { LipShape_v2.TongueRight, 0 }, // +TongueX
+                { LipShape_v2.TongueUp, 0 }, // +TongueY
+                { LipShape_v2.TongueDown, 0 }, // -TongueY
+                { LipShape_v2.TongueRoll, 0 },
+                { LipShape_v2.TongueLongStep2, external.tongueOut },
+                { LipShape_v2.TongueUpRightMorph, 0 },
+                { LipShape_v2.TongueUpLeftMorph, 0 },
+                { LipShape_v2.TongueDownRightMorph, 0 },
+                { LipShape_v2.TongueDownLeftMorph, 0 },
+            };
 
             for (int i = 0; i < SRanipal_Lip_v2.WeightingCount; i++)
             {
@@ -76,12 +71,10 @@ namespace VRCFT_Module_TrueFace
             }
         }
 
-        // Map the LiveLink module's eye data to the SRanipal API
-
         // Map the LiveLink module's full data to the SRanipal API
-        public static void Update(TrueFaceTrackingDataStruct external)
+        public static void Update(TrueFaceTrackingDataLips external)
         {
-            Update(ref UnifiedTrackingData.LatestLipData, external.lips);
+            Update(ref UnifiedTrackingData.LatestLipData, external);
         }
     }
 
@@ -89,40 +82,78 @@ namespace VRCFT_Module_TrueFace
     // Connect to the external tracking system here. The connection is a UDP socket on port 4863.
     public class TrueFaceTrackingModule : ExtTrackingModule
     {
-        private static CancellationTokenSource _cancellationToken;
-        private UdpClient _client;
-        private IPEndPoint _EndPoint;
-        private TrueFaceTrackingDataStruct _latestData;
+        private IPAddress localAddr;
+        private const int Port = 4863;
+
+        private TcpClient client;
+        private NetworkStream stream;
+        private CancellationTokenSource cancellationToken;
+        private bool connected = false;
+
+        private TrueFaceTrackingDataLips _latestData;
+
         public override (bool SupportsEye, bool SupportsLip) Supported => (false, true);
 
         public override (bool eyeSuccess, bool lipSuccess) Initialize(bool eye, bool lip)
         {
-            _cancellationToken?.Cancel();
-            Console.WriteLine("Initializing inside external module");
-            Console.WriteLine("Opening port to external tracking system.");
+            Logger.Msg("Initializing TrueFace");
+            
+            Logger.Msg("Initializing inside external module");
+            Logger.Msg("Opening port to external tracking system.");
+
             try
             {
-                _EndPoint = new IPEndPoint(IPAddress.Any, 4863);
-            } catch (Exception ex)
-            {
-                Console.WriteLine( ex.ToString() );
+                localAddr = IPAddress.Any;
+                cancellationToken = new CancellationTokenSource();
+                ConnectToTCP();
             }
-            
-            _client = new UdpClient(4863);
-            _latestData = new TrueFaceTrackingDataStruct();
-            Console.WriteLine("Port opened.");
-            return (false, true);
+            catch (Exception ex)
+            {
+                Logger.Error(ex.ToString());
+                throw;
+                return (false, false);
+            }
+
+            _latestData = new TrueFaceTrackingDataLips();
+            Logger.Msg("Port opened.");
+            return Supported;
+        }
+
+        private bool ConnectToTCP()
+        {
+            try
+            {
+                client = new TcpClient();
+
+                client.Connect(IPAddress.Any, Port);
+
+                if (client.Connected)
+                {
+                    stream = client.GetStream();
+                    connected = true;
+
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e.Message);
+                throw;
+                return false;
+            }
         }
 
         // This will be run in the tracking thread. This is exposed so you can control when and if the tracking data is updated down to the lowest level.
         public override Action GetUpdateThreadFunc()
         {
-            _cancellationToken = new CancellationTokenSource();
             return () =>
             {
-                while (!_cancellationToken.IsCancellationRequested)
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                   
                     Update();
                     Thread.Sleep(10);
                 }
@@ -136,69 +167,102 @@ namespace VRCFT_Module_TrueFace
             // Receive the data from the external tracking system
             try
             {
-                byte[] data = _client.Receive(ref _EndPoint); // this is causing an exception.. hmm..
+                // Attempt reconnection if needed
+                if (!connected || stream == null)
+                {
+                    ConnectToTCP();
+                }
+
+                // If the connection was unsuccessful, wait a bit and try again
+                if (stream == null)
+                {
+                    Logger.Warning("Didn't reconnect just yet! Trying again...");
+                    return;
+                }
+
+                if (!stream.CanRead)
+                {
+                    Logger.Warning("Can't read from the network stream just yet! Trying again...");
+                    return;
+                }
+
+                List<byte> byteStream = new List<byte>();
+                int @byte = stream.ReadByte();
+                while (@byte != -1)
+                {
+                    byteStream.Add((byte) @byte);
+                    @byte = stream.ReadByte();
+                }
+
+                if (connected)
+                {
+                    Logger.Warning("End of stream! Reconnecting...");
+                    Thread.Sleep(1000);
+                    connected = false;
+                    try
+                    {
+                        stream.Close();
+                    }
+                    catch (SocketException e)
+                    {
+                        Logger.Error(e.Message);
+                        Thread.Sleep(1000);
+                    }
+                }
+
                 Console.WriteLine("Received data from external tracking system.");
                 // Parse the data into a VRCFT-Parseable format
                 try
                 {
-                    ReadData(data);
-                } catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString() );
+                    ReadData(byteStream.ToArray());
                 }
-                
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+
                 // Update the tracking data
                 TrackingData.Update(_latestData);
                 // Print the data to the console, just to make sure it's working
-                Console.WriteLine("Received data from external tracking system.");
+                Logger.Msg("Received data from external tracking system.");
                 // Print the lip data from the external tracking system
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
+                Logger.Msg(e.ToString());
             }
-            
-
-            Console.WriteLine("Jaw Open: " + _latestData.lips.jawOpen);
-            if (Status.EyeState == ModuleState.Active)
-                Console.WriteLine("Eye data is being utilized.");
-            if (Status.LipState == ModuleState.Active)
-                Console.WriteLine("Lip data is being utilized.");
         }
 
         // A chance to de-initialize everything. This runs synchronously inside main game thread. Do not touch any Unity objects here.
 
-
-
         public override void Teardown()
         {
-            Console.WriteLine("Teardown");
-            _cancellationToken?.Cancel();
-            _client?.Close();
-            _cancellationToken?.Dispose();
-            Logger.Msg("Alllllll clean!");
+            cancellationToken?.Cancel();
+            stream.Close();
+            stream.Dispose();
+            client?.Close();
+            client.Dispose();
+            cancellationToken?.Dispose();
         }
+
         private void ReadData(byte[] data)
         {
             // Read the data from the external tracking system, which is in JSON
             // The data is in the format of a TrueFaceTrackingDataStruct
             try
             {
-                var trackingData = new TrueFaceTrackingDataStruct();
+                var trackingData = new TrueFaceTrackingDataLips();
                 var json = System.Text.Encoding.UTF8.GetString(data);
                 // Parse the JSON into a TrueFaceTrackingDataStruct
-                trackingData = JsonConvert.DeserializeObject<TrueFaceTrackingDataStruct>(json);
-                Console.WriteLine(trackingData.lips.jawOpen);
+                trackingData = JsonConvert.DeserializeObject<TrueFaceTrackingDataLips>(json);
+                Console.WriteLine(trackingData.jawOpen);
                 // Update the latest data
                 _latestData = trackingData;
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
             }
-            
-
-
-
         }
     }
 }

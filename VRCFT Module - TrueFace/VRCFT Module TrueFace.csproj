@@ -48,7 +48,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FaceStruct.cs" />
+    <Compile Include="TrueFaceTrackingDataLips.cs" />
     <Compile Include="TrueFaceTrackingModule.cs" />
   </ItemGroup>
   <ItemGroup>
