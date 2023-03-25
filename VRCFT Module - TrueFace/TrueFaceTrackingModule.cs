@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Threading;
 using ViveSR.anipal.Lip;
 using VRCFaceTracking;
@@ -30,39 +31,39 @@ namespace VRCFT_Module_TrueFace
             //if (!UnifiedLibManager.LipEnabled) return;
 
             Dictionary<LipShape_v2, float> lipShapes = new Dictionary<LipShape_v2, float>{
-                    { LipShape_v2.JawRight, external.JawRight }, // +JawX
-                    { LipShape_v2.JawLeft, external.JawLeft }, // -JawX
-                    { LipShape_v2.JawForward, external.JawForward },
-                    { LipShape_v2.JawOpen, external.JawOpen },
-                    { LipShape_v2.MouthApeShape, apeCalc(external.JawOpen, external.MouthClose) },
-                    { LipShape_v2.MouthUpperRight, external.MouthRight }, // +MouthUpper
-                    { LipShape_v2.MouthUpperLeft, external.MouthLeft }, // -MouthUpper
-                    { LipShape_v2.MouthLowerRight, external.MouthRight }, // +MouthLower
-                    { LipShape_v2.MouthLowerLeft, external.MouthLeft }, // -MouthLower
-                    { LipShape_v2.MouthUpperOverturn, external.MouthShrugUpper },
-                    { LipShape_v2.MouthLowerOverturn, external.MouthShrugLower },
-                    { LipShape_v2.MouthPout, (external.MouthFunnel + external.MouthPucker) / 2 },
-                    { LipShape_v2.MouthSmileRight, external.MouthSmileRight }, // +SmileSadRight
-                    { LipShape_v2.MouthSmileLeft, external.MouthSmileLeft }, // +SmileSadLeft
-                    { LipShape_v2.MouthSadRight, external.MouthFrownRight }, // -SmileSadRight
-                    { LipShape_v2.MouthSadLeft, external.MouthFrownLeft }, // -SmileSadLeft
-                    { LipShape_v2.CheekPuffRight, external.CheekPuff },
-                    { LipShape_v2.CheekPuffLeft, external.CheekPuff },
+                    { LipShape_v2.JawRight, external.jawRight }, // +JawX
+                    { LipShape_v2.JawLeft, external.jawLeft }, // -JawX
+                    { LipShape_v2.JawForward, external.jawForward },
+                    { LipShape_v2.JawOpen, external.jawOpen },
+                    { LipShape_v2.MouthApeShape, apeCalc(external.jawOpen, external.mouthClose) },
+                    { LipShape_v2.MouthUpperRight, external.mouthRight }, // +MouthUpper
+                    { LipShape_v2.MouthUpperLeft, external.mouthLeft }, // -MouthUpper
+                    { LipShape_v2.MouthLowerRight, external.mouthRight }, // +MouthLower
+                    { LipShape_v2.MouthLowerLeft, external.mouthLeft }, // -MouthLower
+                    { LipShape_v2.MouthUpperOverturn, external.mouthShrugUpper },
+                    { LipShape_v2.MouthLowerOverturn, external.mouthShrugLower },
+                    { LipShape_v2.MouthPout, (external.mouthFunnel + external.mouthPucker) / 2 },
+                    { LipShape_v2.MouthSmileRight, external.mouthSmile_R }, // +SmileSadRight
+                    { LipShape_v2.MouthSmileLeft, external.mouthSmile_L }, // +SmileSadLeft
+                    { LipShape_v2.MouthSadRight, external.mouthFrown_R }, // -SmileSadRight
+                    { LipShape_v2.MouthSadLeft, external.mouthFrown_L }, // -SmileSadLeft
+                    { LipShape_v2.CheekPuffRight, external.cheekPuff },
+                    { LipShape_v2.CheekPuffLeft, external.cheekPuff },
                     { LipShape_v2.CheekSuck, 0 },
-                    { LipShape_v2.MouthUpperUpRight, external.MouthUpperUpRight },
-                    { LipShape_v2.MouthUpperUpLeft, external.MouthUpperUpLeft },
-                    { LipShape_v2.MouthLowerDownRight, external.MouthLowerDownRight },
-                    { LipShape_v2.MouthLowerDownLeft, external.MouthLowerDownLeft },
-                    { LipShape_v2.MouthUpperInside, external.MouthRollUpper },
-                    { LipShape_v2.MouthLowerInside, external.MouthRollLower },
+                    { LipShape_v2.MouthUpperUpRight, external.mouthUpperUp_R },
+                    { LipShape_v2.MouthUpperUpLeft, external.mouthUpperUp_R },
+                    { LipShape_v2.MouthLowerDownRight, external.mouthUpperUp_R },
+                    { LipShape_v2.MouthLowerDownLeft, external.mouthUpperUp_R },
+                    { LipShape_v2.MouthUpperInside, external.mouthUpperUp_R },
+                    { LipShape_v2.MouthLowerInside, external.mouthUpperUp_R },
                     { LipShape_v2.MouthLowerOverlay, 0 },
-                    { LipShape_v2.TongueLongStep1, external.TongueOut },
+                    { LipShape_v2.TongueLongStep1, external.tongueOut },
                     { LipShape_v2.TongueLeft, 0 }, // -TongueX
                     { LipShape_v2.TongueRight, 0 }, // +TongueX
                     { LipShape_v2.TongueUp, 0 }, // +TongueY
                     { LipShape_v2.TongueDown, 0 }, // -TongueY
                     { LipShape_v2.TongueRoll, 0 },
-                    { LipShape_v2.TongueLongStep2, external.TongueOut },
+                    { LipShape_v2.TongueLongStep2, external.tongueOut },
                     { LipShape_v2.TongueUpRightMorph, 0 },
                     { LipShape_v2.TongueUpLeftMorph, 0 },
                     { LipShape_v2.TongueDownRightMorph, 0 },
@@ -145,7 +146,7 @@ namespace VRCFT_Module_TrueFace
             }
             
 
-            Console.WriteLine("Jaw Open: " + _latestData.lips.JawOpen);
+            Console.WriteLine("Jaw Open: " + _latestData.lips.jawOpen);
             if (Status.EyeState == ModuleState.Active)
                 Console.WriteLine("Eye data is being utilized.");
             if (Status.LipState == ModuleState.Active)
@@ -163,16 +164,23 @@ namespace VRCFT_Module_TrueFace
         private void ReadData(byte[] data)
         {
             // Read the data from the external tracking system, which is in JSON
-            var trackingData = new TrueFaceTrackingDataStruct();
-            var json = System.Text.Encoding.UTF8.GetString(data);
-            // Parse the data into a VRCFT-Parseable format 
-            trackingData = JsonConvert.DeserializeObject<TrueFaceTrackingDataStruct>(json);
-            // Print the data to the console, just to make sure it's working
-            Console.WriteLine("Received data from external tracking system.");
-            // Print the lip data from the external tracking system
-            Console.WriteLine("Jaw data: " + trackingData.lips.JawOpen);
-            // Set the latest data to the data we just received
-            _latestData = trackingData;
+            // The data is in the format of a TrueFaceTrackingDataStruct
+            try
+            {
+                var trackingData = new TrueFaceTrackingDataStruct();
+                var json = System.Text.Encoding.UTF8.GetString(data);
+                // Parse the JSON into a TrueFaceTrackingDataStruct
+                trackingData = JsonConvert.DeserializeObject<TrueFaceTrackingDataStruct>(json);
+                Console.WriteLine(trackingData.lips.jawOpen);
+                // Update the latest data
+                _latestData = trackingData;
+            } catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+            
+
+
 
         }
     }
