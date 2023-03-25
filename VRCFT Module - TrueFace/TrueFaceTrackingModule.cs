@@ -100,9 +100,15 @@ namespace VRCFT_Module_TrueFace
             _cancellationToken?.Cancel();
             Console.WriteLine("Initializing inside external module");
             Console.WriteLine("Opening port to external tracking system.");
+            try
+            {
+                _EndPoint = new IPEndPoint(IPAddress.Any, 4863);
+            } catch (Exception ex)
+            {
+                Console.WriteLine( ex.ToString() );
+            }
             
             _client = new UdpClient(4863);
-            _EndPoint = new IPEndPoint(IPAddress.Any, 4863);
             _latestData = new TrueFaceTrackingDataStruct();
             Console.WriteLine("Port opened.");
             return (false, true);
@@ -133,7 +139,14 @@ namespace VRCFT_Module_TrueFace
                 byte[] data = _client.Receive(ref _EndPoint);
                 Console.WriteLine("Received data from external tracking system.");
                 // Parse the data into a VRCFT-Parseable format
-                ReadData(data);
+                try
+                {
+                    ReadData(data);
+                } catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString() );
+                }
+                
                 // Update the tracking data
                 TrackingData.Update(_latestData);
                 // Print the data to the console, just to make sure it's working
@@ -160,6 +173,10 @@ namespace VRCFT_Module_TrueFace
         public override void Teardown()
         {
             Console.WriteLine("Teardown");
+            _cancellationToken?.Cancel();
+            _client?.Close();
+            _cancellationToken?.Dispose();
+            Logger.Msg("Alllllll clean!");
         }
         private void ReadData(byte[] data)
         {
