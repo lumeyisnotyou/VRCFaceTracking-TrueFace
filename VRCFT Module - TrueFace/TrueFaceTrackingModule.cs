@@ -136,7 +136,7 @@ namespace VRCFT_Module_TrueFace
             // Receive the data from the external tracking system
             try
             {
-                byte[] data = _client.Receive(ref _EndPoint);
+                byte[] data = _client.Receive(ref _EndPoint); // this is causing an exception.. hmm..
                 Console.WriteLine("Received data from external tracking system.");
                 // Parse the data into a VRCFT-Parseable format
                 try
