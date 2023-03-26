@@ -1,11 +1,13 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using ViveSR.anipal.Lip;
 using VRCFaceTracking;
@@ -85,12 +87,11 @@ namespace VRCFT_Module_TrueFace
         private IPAddress localAddr;
         private const int Port = 4863;
 
-        private TcpClient client;
         private NetworkStream stream;
+        private TcpClient client;
         private TcpListener listener;
         private CancellationTokenSource cancellationToken;
         private bool connected = false;
-
         private TrueFaceTrackingDataLips _latestData;
 
         public override (bool SupportsEye, bool SupportsLip) Supported => (false, true);
@@ -98,7 +99,7 @@ namespace VRCFT_Module_TrueFace
         public override (bool eyeSuccess, bool lipSuccess) Initialize(bool eye, bool lip)
         {
             Logger.Msg("Initializing TrueFace");
-            
+
             Logger.Msg("Initializing inside external module");
             Logger.Msg("Opening port to external tracking system.");
 
@@ -106,18 +107,10 @@ namespace VRCFT_Module_TrueFace
             {
                 localAddr = IPAddress.Any;
                 cancellationToken = new CancellationTokenSource();
-                listener = new TcpListener(localAddr, Port);
-                listener.Start();
-                Logger.Msg("Started listener");
-                try
-                {
-                    ConnectToTCP();
-                } catch (Exception ex)
-                {
-                    Logger.Error(ex.ToString());
-                    return (false, false);
-                }
+                // Start listening for connections
                 
+                Logger.Msg("Started listener");
+                ConnectToTCP();
             }
             catch (Exception ex)
             {
@@ -132,30 +125,27 @@ namespace VRCFT_Module_TrueFace
 
         private bool ConnectToTCP()
         {
-            try
+            while (true)
             {
-                
-                client = new TcpClient();
-                client.Connect(localAddr, Port);
 
-                if (client.Connected)
+                // Start the listener and wait for a client
+                listener = new TcpListener(localAddr, Port);
+                listener.Start();
+                Logger.Msg("Waiting for a client");
+                client = listener.AcceptTcpClient();
+                stream = client.GetStream();
+                Logger.Msg("Stream recieved!");
+                Console.WriteLine(stream);
+                while (client.Connected)
                 {
-                    stream = client.GetStream();
                     connected = true;
-
+                    Logger.Msg("Connected to external tracking system.");
+                    Logger.Msg(stream.ToString());
                     return true;
                 }
-                else
-                {
-                    return false;
-                }
+                
             }
-            catch (Exception e)
-            {
-                Logger.Error(e.Message);
-                return false;
             }
-        }
 
         // This will be run in the tracking thread. This is exposed so you can control when and if the tracking data is updated down to the lowest level.
         public override Action GetUpdateThreadFunc()
@@ -180,6 +170,7 @@ namespace VRCFT_Module_TrueFace
                 // Attempt reconnection if needed
                 if (!connected || stream == null)
                 {
+                    Logger.Warning("The connection was a LIE!");
                     ConnectToTCP();
                 }
 
@@ -196,15 +187,25 @@ namespace VRCFT_Module_TrueFace
                     return;
                 }
 
-                List<byte> byteStream = new List<byte>();
+                /*List<byte> byteStream = new List<byte>();
                 int @byte = stream.ReadByte();
                 while (@byte != -1)
                 {
-                    byteStream.Add((byte) @byte);
+                    Console.WriteLine("Adding" + @byte);
+                    byteStream.Add((byte)@byte);
                     @byte = stream.ReadByte();
-                }
+                }*/
+                // Read the data from the stream, compiling the full payload, which may be seperated over multiple packets
+                byte[] buffer = new byte[client.ReceiveBufferSize];
+                MemoryStream byteStream = new MemoryStream();
+                int bytesRead = 0;
+                do
+                {
+                    bytesRead = stream.Read(buffer, 0, client.ReceiveBufferSize);
+                    byteStream.Write(buffer, 0, bytesRead);
+                } while (stream.DataAvailable);
 
-                if (connected)
+                /*if (connected)
                 {
                     Logger.Warning("End of stream! Reconnecting...");
                     Thread.Sleep(1000);
@@ -218,7 +219,7 @@ namespace VRCFT_Module_TrueFace
                         Logger.Error(e.Message);
                         Thread.Sleep(1000);
                     }
-                }
+                }*/
 
                 Console.WriteLine("Received data from external tracking system.");
                 // Parse the data into a VRCFT-Parseable format
@@ -250,8 +251,9 @@ namespace VRCFT_Module_TrueFace
             cancellationToken?.Cancel();
             stream.Close();
             stream.Dispose();
-            client?.Close();
-            client.Dispose();
+            listener.Stop();
+            //client?.Close();
+            //client.Dispose();
             cancellationToken?.Dispose();
         }
 

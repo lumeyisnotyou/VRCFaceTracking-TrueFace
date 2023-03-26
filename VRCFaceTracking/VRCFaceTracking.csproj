@@ -83,6 +83,7 @@
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
     <EmbeddedResource Include="Assets\Images\VRCFT.ico" />
     <EmbeddedResource Include="TrackingLibs\SRanipal\libHTC_License.dll" />
