@@ -3,15 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using ViveSR.anipal.Lip;
 using VRCFaceTracking;
-using VRCFaceTracking.Params;
 
 // Credit to the livelink module, it's basically ARKit, so I'm reading the code as I write this 💀
 namespace VRCFT_Module_TrueFace
@@ -108,7 +104,7 @@ namespace VRCFT_Module_TrueFace
                 localAddr = IPAddress.Any;
                 cancellationToken = new CancellationTokenSource();
                 // Start listening for connections
-                
+
                 Logger.Msg("Started listener");
                 ConnectToTCP();
             }
@@ -129,8 +125,11 @@ namespace VRCFT_Module_TrueFace
             {
 
                 // Start the listener and wait for a client
-                listener = new TcpListener(localAddr, Port);
-                listener.Start();
+                if (listener == null)
+                {
+                    listener = new TcpListener(localAddr, Port);
+                    listener.Start();
+                }
                 Logger.Msg("Waiting for a client");
                 client = listener.AcceptTcpClient();
                 stream = client.GetStream();
@@ -143,9 +142,14 @@ namespace VRCFT_Module_TrueFace
                     Logger.Msg(stream.ToString());
                     return true;
                 }
-                
+                // Handle disconnection
+                if (!client.Connected)
+                {
+                    Logger.Warning("Client disconnected!");
+                    connected = false;
+                }
             }
-            }
+        }
 
         // This will be run in the tracking thread. This is exposed so you can control when and if the tracking data is updated down to the lowest level.
         public override Action GetUpdateThreadFunc()
@@ -196,15 +200,35 @@ namespace VRCFT_Module_TrueFace
                     @byte = stream.ReadByte();
                 }*/
                 // Read the data from the stream, compiling the full payload, which may be seperated over multiple packets
+                // Handle forcibly closed connections
                 byte[] buffer = new byte[client.ReceiveBufferSize];
                 MemoryStream byteStream = new MemoryStream();
                 int bytesRead = 0;
-                do
+                try
                 {
-                    bytesRead = stream.Read(buffer, 0, client.ReceiveBufferSize);
-                    byteStream.Write(buffer, 0, bytesRead);
-                } while (stream.DataAvailable);
 
+                    do
+                    {
+                        bytesRead = stream.Read(buffer, 0, client.ReceiveBufferSize);
+                        byteStream.Write(buffer, 0, bytesRead);
+                    } while (stream.DataAvailable && !cancellationToken.IsCancellationRequested);
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e.Message + " From the byte reading machine");
+                    Logger.Warning("Socket exception! Reconnecting...");
+                    Thread.Sleep(1000);
+                    connected = false;
+                    try
+                    {
+                        client.Close();
+                    }
+                    catch (SocketException ex)
+                    {
+                        Logger.Error(ex.Message);
+                        Thread.Sleep(1000);
+                    }
+                }
                 /*if (connected)
                 {
                     Logger.Warning("End of stream! Reconnecting...");
@@ -223,24 +247,34 @@ namespace VRCFT_Module_TrueFace
 
                 Console.WriteLine("Received data from external tracking system.");
                 // Parse the data into a VRCFT-Parseable format
-                try
+                if (connected == true)
                 {
-                    ReadData(byteStream.ToArray());
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
-                }
+                    try
+                    {
+                        ReadData(byteStream.ToArray());
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.ToString());
 
-                // Update the tracking data
-                TrackingData.Update(_latestData);
+                    }
+
+                    // Update the tracking data. We need to make sure it's still connected, as to not overwrite the data with null.
+
+                    TrackingData.Update(_latestData);
+                }
                 // Print the data to the console, just to make sure it's working
                 Logger.Msg("Received data from external tracking system.");
                 // Print the lip data from the external tracking system
             }
             catch (Exception e)
             {
-                Logger.Msg(e.ToString());
+                Logger.Error(e.ToString());
+
+
+
+
+
             }
         }
 
@@ -252,8 +286,8 @@ namespace VRCFT_Module_TrueFace
             stream.Close();
             stream.Dispose();
             listener.Stop();
-            //client?.Close();
-            //client.Dispose();
+            client?.Close();
+            client.Dispose();
             cancellationToken?.Dispose();
         }
 
@@ -267,6 +301,7 @@ namespace VRCFT_Module_TrueFace
                 var json = System.Text.Encoding.UTF8.GetString(data);
                 // Parse the JSON into a TrueFaceTrackingDataStruct
                 trackingData = JsonConvert.DeserializeObject<TrueFaceTrackingDataLips>(json);
+                if (trackingData == null) { return; }
                 Console.WriteLine(trackingData.jawOpen);
                 // Update the latest data
                 _latestData = trackingData;
